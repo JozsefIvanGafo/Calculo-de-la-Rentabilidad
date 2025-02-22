@@ -3,6 +3,7 @@ import numpy as np
 from tqdm import tqdm
 from numpy import random as np_random
 from .functions import generate_random_numbers 
+import seaborn as sns
 
 class MonteCarloSimulator():
     #TODO: Make it faster
@@ -48,6 +49,16 @@ class MonteCarloSimulator():
     def __plot(self):
         #TODO: Implement plotting
         print("Plotting Monte Carlo Simulation")
+        #using seaborn create a graphic with the tir_values
+        import matplotlib.pyplot as plt
+
+        sns.set(style="whitegrid")
+        # Create a histogram with KDE of the TIR values
+        sns.histplot(self.__tir_values, kde=True, bins=30, color='blue')
+        plt.title("Distribution of TIR Values")
+        plt.xlabel("TIR")
+        plt.ylabel("Frequency")
+        plt.show()
         pass
 
     def __calculate_an_iteration(self):
