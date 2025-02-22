@@ -1,1 +1,0 @@
-path="Calculo de la rentabilidad de un proyecto.ipynb"
