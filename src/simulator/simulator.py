@@ -7,6 +7,7 @@ import seaborn as sns
 
 class MonteCarloSimulator():
     #TODO: Make it faster
+    #TODO: Refactor the code
 
 
     def __init__(self,params):
