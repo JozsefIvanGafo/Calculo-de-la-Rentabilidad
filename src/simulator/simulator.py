@@ -1,9 +1,9 @@
 import win32com.client
 import numpy as np
 from tqdm import tqdm
-from numpy import random as np_random
 from .functions import generate_random_numbers 
 import seaborn as sns
+from concurrent.futures import ThreadPoolExecutor
 
 class MonteCarloSimulator():
     #TODO: Make it faster
@@ -33,21 +33,7 @@ class MonteCarloSimulator():
             self.__tir_values.append(self.__calculate_an_iteration(random_list))
         self.__close_excel()
         
-        # Mean (Average)
-        mean_np = np.mean(self.__tir_values)
-        print(f'Mean (numpy): {mean_np}')
-
-        # Median
-        median_np = np.median(self.__tir_values)
-        print(f'Median (numpy): {median_np}')
-
-        # Standard Deviation
-        std_dev_np = np.std(self.__tir_values, ddof=1)  # ddof=1 for sample standard deviation
-        print(f'Standard Deviation (numpy): {std_dev_np}')
-
-        # Variance
-        variance_np = np.var(self.__tir_values, ddof=1)
-        print(f'Variance (numpy): {variance_np}')
+        self.__statistics()
 
 
     def __plot(self):
@@ -90,6 +76,22 @@ class MonteCarloSimulator():
 
         return tir
 
+    def __statistics(self):
+        # Mean (Average)
+        mean_np = np.mean(self.__tir_values)
+        print(f'Mean (numpy): {mean_np}')
+
+        # Median
+        median_np = np.median(self.__tir_values)
+        print(f'Median (numpy): {median_np}')
+
+        # Standard Deviation
+        std_dev_np = np.std(self.__tir_values, ddof=1)  # ddof=1 for sample standard deviation
+        print(f'Standard Deviation (numpy): {std_dev_np}')
+
+        # Variance
+        variance_np = np.var(self.__tir_values, ddof=1)
+        print(f'Variance (numpy): {variance_np}')
 
     def __multiply_row(self, row, multiplier):
         column = 2
