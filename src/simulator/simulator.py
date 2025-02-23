@@ -1,26 +1,31 @@
 import win32com.client
 import numpy as np
-from tqdm import tqdm
-from .functions import generate_random_numbers 
 import seaborn as sns
+from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
+#Project imports
+from .functions import generate_random_numbers 
+from .excel_handler import ExcelHandler
+
 
 class MonteCarloSimulator():
     #TODO: Make it faster
     #TODO: Refactor the code
-    #TODO: Paralelize the code
+    #TODO: Parallelize the code
 
 
     def __init__(self,params):
         self.__params = params
+        #Debugging options
         self.__debug = False
-        self.__see_excel=False
+        self.__see_excel=True
+        #declare variables need it for the simulation
         self.__tir_values = []
-        self.__workbook = None
-        self.__sheet = None
-        self.__excel_file = None
-        self.__extract_excel()
+        #Variables ofr the excels
+        self.__excel_obj = ExcelHandler(self.__params.data_path)
 
+        self.__e_file,self.__wkbk,self.__sheet=\
+            self.__excel_obj.extract_excel(visible=self.__see_excel)
 
     
     def __run(self):
@@ -31,10 +36,12 @@ class MonteCarloSimulator():
         
         for random_list in tqdm(random_num_list, desc="Simulations progress"):
             self.__tir_values.append(self.__calculate_an_iteration(random_list))
-        self.__close_excel()
-        
-        self.__statistics()
 
+        #We close the excel file
+        self.__excel_obj.close_excel(self.__wkbk,self.__e_file)
+        #print statistics of the simulation
+        self.__statistics()
+        #plot the simulation
         self.__plot()
 
 
@@ -74,7 +81,8 @@ class MonteCarloSimulator():
             print(f'TIR: {tir}')
 
         #reset workbook and excel file
-        self.__reset_sheet()
+        self.__wkbk,self.__sheet=\
+            self.__excel_obj.reset_sheet(self.__wkbk,self.__sheet,self.__e_file)
 
         return tir
 
@@ -104,34 +112,6 @@ class MonteCarloSimulator():
             self.__sheet.Cells(row, column).Value = cell_value * multiplier
             column += 1
         
-    def __reset_sheet(self):
-        """ Closes and reopens the workbook to reset all changes. """
-        self.__workbook.Close(SaveChanges=False)
-        self.__workbook = self.__excel_file.Workbooks.Open(self.__params.data_path)
-        self.__sheet = self.__workbook.Worksheets(1)
-        
-
-    
-    def __extract_excel(self):
-        try:
-            self.__excel_file = win32com.client.Dispatch("Excel.Application")
-            self.__excel_file.Visible = self.__debug or self.__see_excel# Ensure Excel window is open (optional)
-            self.__workbook = self.__excel_file.Workbooks.Open(self.__params.data_path)
-            self.__sheet = self.__workbook.Worksheets(1)
-        except FileNotFoundError:
-            print(f'[ERROR ID=001]: File not found {self.__params.data_path}')
-        except Exception as e:
-            print(f'[ERROR ID=002] {self.__params.data_path}: {e}')
-    
-    def __close_excel(self):
-        if hasattr(self, '__workbook'):
-            self.__workbook.Close(SaveChanges=False)
-        if hasattr(self, '__excel_file'):
-            self.__excel_file.Quit()
-
     @property
     def run(self):
         return self.__run
-    @property
-    def plot(self):
-        return self.__plot
