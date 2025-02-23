@@ -35,6 +35,8 @@ class MonteCarloSimulator():
         
         self.__statistics()
 
+        self.__plot()
+
 
     def __plot(self):
         
