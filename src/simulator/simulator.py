@@ -1,4 +1,5 @@
 import win32com.client
+import multiprocessing
 import numpy as np
 import seaborn as sns
 from tqdm import tqdm
@@ -6,36 +7,44 @@ from concurrent.futures import ThreadPoolExecutor
 #Project imports
 from .functions import generate_random_numbers 
 from .excel_handler import ExcelHandler
+from .sim_types import Parameters
 
 
 class MonteCarloSimulator():
-    #TODO: Make it faster
-    #TODO: Refactor the code
     #TODO: Parallelize the code
 
 
-    def __init__(self,params):
+    def __init__(self,params:Parameters):
         self.__params = params
         #Debugging options
         self.__debug = False
         self.__see_excel=True
         #declare variables need it for the simulation
         self.__tir_values = []
-        #Variables ofr the excels
+        #Variables of the excel
         self.__excel_obj = ExcelHandler(self.__params.data_path)
+
+        #We count the number of cores and substract 2
+        cores=multiprocessing.cpu_count()
+        if cores>2:
+            self.__useful_cores = cores-2
+        else:
+            self.__useful_cores=1
 
         self.__e_file,self.__wkbk,self.__sheet=\
             self.__excel_obj.extract_excel(visible=self.__see_excel)
 
     
-    def __run(self):
+    def run(self):
         print("Running Monte Carlo Simulation")
         num_iterations = self.__params.num_simulations
         random_num_list=[generate_random_numbers(3) for _ in range(num_iterations)]
 
+        #TODO: We use the ThreadPoolExecutor to parallelize the simulation
+
         
         for random_list in tqdm(random_num_list, desc="Simulations progress"):
-            self.__tir_values.append(self.__calculate_an_iteration(random_list))
+            self.__tir_values.append(self.__calculate_an_iteration(random_list,self.__sheet))
 
         #We close the excel file
         self.__excel_obj.close_excel(self.__wkbk,self.__e_file)
@@ -60,7 +69,7 @@ class MonteCarloSimulator():
         plt.show()
         pass
 
-    def __calculate_an_iteration(self,random_nums):
+    def __calculate_an_iteration(self,random_nums,sheet):
         
         inversion_multp,ingresos_multp,costes_totales_multp=random_nums
         if self.__debug:
@@ -68,23 +77,27 @@ class MonteCarloSimulator():
             print(f"Ingresos multiplier: {ingresos_multp}")
             print(f"Costes totales multiplier: {costes_totales_multp}")
 
-        self.__multiply_row(self.__params.inversion_row,inversion_multp)
-        self.__multiply_row(self.__params.ingresos_row,ingresos_multp)
-        self.__multiply_row(self.__params.costes_totales_row,costes_totales_multp)
+        self.__change_multipliers(random_nums,sheet)
+
 
         #update the Workbook
-        self.__sheet.Calculate()
+        sheet.Calculate()
 
         #get the TIR
-        tir=self.__sheet.Cells(self.__params.tir_cell[0],self.__params.tir_cell[1]).Value
+        tir=self.__excel_obj.get_cell_value(
+            sheet,self.__params.tir_cell)
+        
+        
         if self.__debug:
             print(f'TIR: {tir}')
 
-        #reset workbook and excel file
-        self.__wkbk,self.__sheet=\
-            self.__excel_obj.reset_sheet(self.__wkbk,self.__sheet,self.__e_file)
-
         return tir
+    
+    def __change_multipliers(self,random_nums,sheet):
+        #Change the multipliers in the excel file
+        for i, (_, multp_coord) in enumerate(self.__params.multp_cell.items()):
+            number_change = 1 + random_nums[i]
+            self.__excel_obj.write_on_cell(sheet, multp_coord, number_change)
 
     def __statistics(self):
         # Mean (Average)
@@ -103,15 +116,4 @@ class MonteCarloSimulator():
         variance_np = np.var(self.__tir_values, ddof=1)
         print(f'Variance (numpy): {variance_np}')
 
-    def __multiply_row(self, row, multiplier):
-        column = 2
-        while True:
-            cell_value = self.__sheet.Cells(row, column).Value
-            if cell_value is None or cell_value == "":
-                break
-            self.__sheet.Cells(row, column).Value = cell_value * multiplier
-            column += 1
         
-    @property
-    def run(self):
-        return self.__run

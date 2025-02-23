@@ -1,5 +1,5 @@
-from simulator import MonteCarloSimulator
-from parameters import Parameters
+from simulator import MonteCarloSimulator, Parameters
+
 
 
 if __name__ == "__main__":
