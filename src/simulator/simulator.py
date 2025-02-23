@@ -8,12 +8,13 @@ import seaborn as sns
 class MonteCarloSimulator():
     #TODO: Make it faster
     #TODO: Refactor the code
+    #TODO: Paralelize the code
 
 
     def __init__(self,params):
         self.__params = params
         self.__debug = False
-        self.__see_excel=True
+        self.__see_excel=False
         self.__tir_values = []
         self.__workbook = None
         self.__sheet = None
@@ -25,9 +26,11 @@ class MonteCarloSimulator():
     def __run(self):
         print("Running Monte Carlo Simulation")
         num_iterations = self.__params.num_simulations
+        random_num_list=[generate_random_numbers(3) for _ in range(num_iterations)]
+
         
-        for _ in tqdm(range(num_iterations), desc="Simulations progress"):
-            self.__tir_values.append(self.__calculate_an_iteration())
+        for random_list in tqdm(random_num_list, desc="Simulations progress"):
+            self.__tir_values.append(self.__calculate_an_iteration(random_list))
         self.__close_excel()
         
         # Mean (Average)
@@ -48,7 +51,7 @@ class MonteCarloSimulator():
 
 
     def __plot(self):
-        #TODO: Implement plotting
+        
         print("Plotting Monte Carlo Simulation")
         #using seaborn create a graphic with the tir_values
         import matplotlib.pyplot as plt
@@ -62,9 +65,9 @@ class MonteCarloSimulator():
         plt.show()
         pass
 
-    def __calculate_an_iteration(self):
+    def __calculate_an_iteration(self,random_nums):
         
-        inversion_multp,ingresos_multp,costes_totales_multp=generate_random_numbers(3)
+        inversion_multp,ingresos_multp,costes_totales_multp=random_nums
         if self.__debug:
             print(f"Inversion multiplier: {inversion_multp}")
             print(f"Ingresos multiplier: {ingresos_multp}")
