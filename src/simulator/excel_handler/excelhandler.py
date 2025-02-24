@@ -7,6 +7,8 @@ from ..sim_types import CellValueCoord
 class ExcelHandler():
     def __init__(self,data_path):
         print("ExcelHandler Initialized ...")
+        if not os.path.exists(data_path):
+            raise SimulationException(f'[EXCEL ERROR ID=000]: Path does not exist {data_path}')
         self.__data_path=data_path
         
 
